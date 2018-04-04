@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fraunhofer.fkie.gehring</groupId>
@@ -13,13 +14,13 @@
 	</properties>
 
 	<dependencies>
-	   <dependency>
-	       <artifactId>dkpro-core-io-tika-asl</artifactId>
-	       <groupId>org.dkpro.core</groupId>
-	       <version>${dkpro.core.version}</version>
-	   </dependency>
-	
-	
+		<dependency>
+			<artifactId>dkpro-core-io-tika-asl</artifactId>
+			<groupId>org.dkpro.core</groupId>
+			<version>${dkpro.core.version}</version>
+		</dependency>
+
+
 		<!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core -->
 		<dependency>
 			<groupId>org.apache.spark</groupId>
@@ -75,5 +76,51 @@
 			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
 			<version>${dkpro.core.version}</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/de.tudarmstadt.ukp.dkpro.core/de.tudarmstadt.ukp.dkpro.core.api.metadata-asl -->
+		<dependency>
+			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
+			<artifactId>de.tudarmstadt.ukp.dkpro.core.api.metadata-asl</artifactId>
+			<version>${dkpro.core.version}</version>
+		</dependency>
+
 	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.2</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+									<resource>META-INF/org.apache.uima.fit/fsindexes.txt</resource>
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+									<resource>META-INF/org.apache.uima.fit/types.txt</resource>
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+									<resource>META-INF/org.apache.uima.fit/typepriorities.txt</resource>
+								</transformer>
+							</transformers>
+							<outputFile>\
+								${project.build.directory}/
+								${project.artifactId}-${project.version}-standalone.jar
+							</outputFile>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+    
 </project>

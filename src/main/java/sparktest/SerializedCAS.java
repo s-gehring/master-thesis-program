@@ -4,13 +4,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.log4j.Logger;
+import org.apache.uima.analysis_engine.AnalysisEngine;
+import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CAS;
-import org.apache.uima.cas.admin.CASFactory;
 import org.apache.uima.cas.impl.XmiCasDeserializer;
 import org.apache.uima.cas.impl.XmiCasSerializer;
+import org.apache.uima.resource.ResourceInitializationException;
+import org.apache.uima.util.CasCreationUtils;
 import org.xml.sax.SAXException;
 
 public class SerializedCAS implements Serializable {
@@ -60,10 +64,10 @@ public class SerializedCAS implements Serializable {
 		if (this.content == null) {
 			throw new NullPointerException("Can't populate CAS, since the serialized CAS was null.");
 		}
-
 		try (InputStream casBytes = new ByteArrayInputStream(this.content)) {
 
 			XmiCasDeserializer.deserialize(casBytes, cas);
+
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary input stream.", e);
 		} catch (SAXException e) {
@@ -72,21 +76,39 @@ public class SerializedCAS implements Serializable {
 
 	}
 
-	public CAS getCAS() {
-		if (this.content == null) {
-			return null;
+	public CAS getCAS(final AnalysisEngine pipeline) {
+		CAS cas;
+		try {
+			cas = pipeline.newCAS();
+		} catch (ResourceInitializationException e) {
+			throw new RuntimeException("Failed to generate CAS on deserialization.", e);
 		}
-		CAS target = null;
+		this.populateCAS(cas);
+		return cas;
+	}
+
+	public CAS getCAS(final AnalysisEngineDescription pipelineDescription) {
+		CAS targetCas;
+		try {
+			targetCas = CasCreationUtils.createCas(pipelineDescription);
+		} catch (ResourceInitializationException e1) {
+			throw new RuntimeException("Failed to instantiate a new CAS.", e1);
+		}
+
 		try (InputStream casBytes = new ByteArrayInputStream(this.content)) {
-			target = CASFactory.createCAS().getCAS();
-			XmiCasDeserializer.deserialize(casBytes, target);
+
+			XmiCasDeserializer.deserialize(casBytes, targetCas);
 
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary input stream.", e);
 		} catch (SAXException e) {
 			throw new RuntimeException("Error deserializing bytes into CAS.", e);
 		}
-		return target;
+		return targetCas;
+	}
+
+	protected byte[] getSerializedContent() {
+		return this.content;
 	}
 
 	@Override
@@ -102,8 +124,9 @@ public class SerializedCAS implements Serializable {
 		}
 		if (obj instanceof SerializedCAS) {
 			SerializedCAS cas = (SerializedCAS) obj;
-			return cas.getCAS().equals(this.getCAS());
+			return Arrays.equals(cas.content, this.content);
 		}
+
 		return false;
 	}
 
