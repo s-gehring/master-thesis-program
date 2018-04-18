@@ -26,6 +26,7 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.11</artifactId>
 			<version>2.3.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/junit/junit -->
 		<dependency>
@@ -84,13 +85,14 @@
 		</dependency>
 
 	</dependencies>
-	
+
 	<build>
+
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.2</version>
+				<version>3.1.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -112,15 +114,11 @@
 									<resource>META-INF/org.apache.uima.fit/typepriorities.txt</resource>
 								</transformer>
 							</transformers>
-							<outputFile>\
-								${project.build.directory}/
-								${project.artifactId}-${project.version}-standalone.jar
-							</outputFile>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
 	</build>
-    
+
 </project>

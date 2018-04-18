@@ -35,6 +35,7 @@ public class ZLib implements CompressionAlgorithm {
 		Inflater inflater = new Inflater();
 		inflater.setInput(input.toByteArray());
 
+		@SuppressWarnings("resource")
 		ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
 		while (!inflater.finished()) {
