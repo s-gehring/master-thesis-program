@@ -15,6 +15,9 @@ import org.apache.uima.cas.CAS;
 import org.junit.Before;
 import org.junit.Test;
 
+import sparktest.equals.CasEquals;
+import sparktest.equals.NotEqualException;
+
 public class TestCasSerialization {
 
 	private static CAS finishedCas = null;
@@ -78,12 +81,13 @@ public class TestCasSerialization {
 	 * Is s⁻¹(s(x)) == s⁻¹(s(s⁻¹(s(x))))?
 	 */
 	@Test
-	public void testSerializationWeak() throws IOException, ClassNotFoundException {
+	public void testSerializationWeak() throws IOException, ClassNotFoundException, NotEqualException {
 		SerializedCAS firstOutCas = new SerializedCAS(finishedCas);
 		CAS firstRun = firstOutCas.getCAS(this.pipeline);
 		SerializedCAS secondOutCas = new SerializedCAS(firstRun);
 		CAS secondRun = secondOutCas.getCAS(this.pipeline);
-		assertTrue("First and second deserizalized CAS are not equal.", CasEquals.equals(firstRun, secondRun));
+
+		CasEquals.equalsCas(firstRun, secondRun);
 
 	}
 
@@ -91,7 +95,7 @@ public class TestCasSerialization {
 	 * Is s⁻¹(s(x)) == x?
 	 */
 	@Test
-	public void testSerializationIntoFile() throws IOException, ClassNotFoundException {
+	public void testSerializationIntoFile() throws IOException, ClassNotFoundException, NotEqualException {
 		SerializedCAS outCas = new SerializedCAS(finishedCas);
 		SerializedCAS inCas;
 		File f = this.getTempFile();
@@ -108,6 +112,13 @@ public class TestCasSerialization {
 
 		}
 
-		assertTrue("Serialized and deserialized CAS are not equal.", finishedCas.equals(outCas.getCAS(this.pipeline)));
+		CasEquals.equalsCas(outCas.getCAS(this.pipeline), finishedCas);
+
+	}
+
+	public static void main(final String[] argv) throws Exception {
+		TestCasSerialization x = new TestCasSerialization();
+		x.testSerializationWeak();
+		x.testSerializationIntoFile();
 	}
 }

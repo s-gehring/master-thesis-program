@@ -22,8 +22,9 @@ public class SamplePipelineFactory {
 		AnalysisEngineDescription posTagger;
 		AnalysisEngineDescription lemmatizer;
 		AnalysisEngineDescription recognizer;
+		AnalysisEngineDescription identifier;
 		try {
-			// identifier = createEngineDescription(LanguageIdentifier.class);
+			identifier = createEngineDescription(LanguageSetter.class);
 			segmenter = createEngineDescription(OpenNlpSegmenter.class);
 			lemmatizer = createEngineDescription(MateLemmatizer.class);
 			posTagger = createEngineDescription(OpenNlpPosTagger.class);
@@ -33,6 +34,7 @@ public class SamplePipelineFactory {
 			throw new RuntimeException("Error defining engine descriptions.", e);
 		}
 		AggregateBuilder builder = new AggregateBuilder();
+		builder.add(identifier);
 		builder.add(segmenter);
 		builder.add(lemmatizer);
 		builder.add(posTagger);

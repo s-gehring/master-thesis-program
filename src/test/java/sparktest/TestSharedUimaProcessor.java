@@ -17,7 +17,7 @@ public class TestSharedUimaProcessor {
 		CollectionReaderDescription reader = SampleCollectionReaderFactory.getTestFileReaderDescription();
 		AnalysisEngineDescription pipeline = SamplePipelineFactory.getNewPipelineDescription();
 
-		SparkConf configuration = new SparkConf().setMaster("local[8]")
+		SparkConf configuration = new SparkConf().setMaster("local[1]")
 				.setAppName(this.getClass().getName() + " (Test)");
 
 		SharedUimaProcessor processor = new SharedUimaProcessor(configuration);
