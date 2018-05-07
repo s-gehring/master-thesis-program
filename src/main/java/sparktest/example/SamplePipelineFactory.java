@@ -1,4 +1,4 @@
-package sparktest;
+package sparktest.example;
 
 import static org.apache.uima.fit.factory.AnalysisEngineFactory.createEngineDescription;
 

@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import sparktest.equals.CasEquals;
 import sparktest.equals.NotEqualException;
+import sparktest.example.SamplePipelineFactory;
 
 public class TestCasSerialization {
 

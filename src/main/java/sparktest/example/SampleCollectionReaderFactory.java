@@ -1,4 +1,4 @@
-package sparktest;
+package sparktest.example;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;

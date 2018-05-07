@@ -1,4 +1,4 @@
-package sparktest;
+package sparktest.example;
 
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.fit.component.JCasAnnotator_ImplBase;
