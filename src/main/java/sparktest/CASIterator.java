@@ -30,6 +30,7 @@ public class CASIterator implements Iterator<CAS> {
 			this.underlyingList.add(sCas.getCAS(pipelineDescription));
 			counter++;
 		}
+		this.underlyingIterator = this.underlyingList.iterator();
 		LOGGER.info("Successfully extracted " + counter + " CAS.");
 
 	}

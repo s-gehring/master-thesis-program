@@ -13,6 +13,14 @@ public class SampleCollectionReaderFactory {
 	private SampleCollectionReaderFactory() {
 	}
 
+	public static CollectionReaderDescription getSampleTextReaderDescription() {
+		try {
+			return CollectionReaderFactory.createReaderDescription(SampleCollectionReader.class);
+		} catch (ResourceInitializationException e) {
+			throw new RuntimeException("Error creating the extremely simple Sample Text Reader Description.", e);
+		}
+	}
+
 	public static CollectionReaderDescription getTestFileReaderDescription() {
 		CollectionReaderDescription result;
 		try {

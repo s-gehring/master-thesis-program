@@ -49,6 +49,7 @@ public class SharedUimaProcessor {
 	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription) {
 		Iterator<SerializedCAS> serializedResultIterator;
+		List<SerializedCAS> collectedResults;
 		try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
 
 			CollectionReader reader;
@@ -59,8 +60,11 @@ public class SharedUimaProcessor {
 			}
 
 			JavaRDD<SerializedCAS> documents = readDocuments(reader, sparkContext, pipelineDescription);
+			System.out.println(documents.count() + " elements found to be processed.");
 			JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
-
+			System.out.println(result.count() + " elements processed.");
+			collectedResults = result.collect();
+			System.out.println(collectedResults.size() + " elements retrieved.");
 			serializedResultIterator = result.collect().iterator();
 		}
 		return new CASIterator(serializedResultIterator, pipelineDescription);

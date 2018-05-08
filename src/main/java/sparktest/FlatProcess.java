@@ -13,23 +13,31 @@ import org.apache.uima.resource.ResourceInitializationException;
 
 public class FlatProcess implements FlatMapFunction<SerializedCAS, SerializedCAS> {
 
+	private AnalysisEngineDescription pipelineDescription;
 	private static AnalysisEngine pipeline;
 
-	public FlatProcess(final AnalysisEngineDescription engineDescription) {
-
+	private AnalysisEngine preparePipeline() {
 		try {
-			pipeline = AnalysisEngineFactory.createEngine(engineDescription);
+			return AnalysisEngineFactory.createEngine(this.pipelineDescription);
 		} catch (ResourceInitializationException e) {
 			throw new RuntimeException("Failed to initialize pipeline.", e);
 		}
 	}
 
+	public FlatProcess(final AnalysisEngineDescription engineDescription) {
+		this.pipelineDescription = engineDescription;
+
+	}
+
 	@Override
 	public Iterator<SerializedCAS> call(final SerializedCAS inputCAS) throws Exception {
-		CAS cas = FlatProcess.pipeline.newCAS();
+		if (pipeline == null) {
+			pipeline = this.preparePipeline();
+		}
+		CAS cas = pipeline.newCAS();
 		inputCAS.populateCAS(cas);
 
-		FlatProcess.pipeline.process(cas);
+		pipeline.process(cas);
 		Collection<SerializedCAS> casCollection = new LinkedList<SerializedCAS>();
 
 		casCollection.add(new SerializedCAS(cas));
