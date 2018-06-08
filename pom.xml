@@ -37,6 +37,7 @@
 			<scope>test</scope>
 		</dependency>
 
+
 		<!-- https://mvnrepository.com/artifact/org.apache.uima/uimafit-core -->
 		<dependency>
 			<groupId>org.apache.uima</groupId>
