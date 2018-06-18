@@ -18,13 +18,13 @@ import sparktest.benchmark.Benchmarks;
 
 public class ExamplePipelineProcessor {
 
-	private static void examplePipeline() {
+	public static void exampleSimplePipeline() {
 		CollectionReaderDescription reader = SampleCollectionReaderFactory.getSampleTextReaderDescription();
 		AnalysisEngineDescription pipeline = SamplePipelineFactory.getNewPipelineDescription();
 
 		SparkConf configuration = new SparkConf().setMaster("spark://master:7077")
 				.setAppName(ExamplePipelineProcessor.class.getSimpleName() + " (Spark Example)")
-				.set("spark.cores.max", "2").set("spark.executor.memory", "2g")
+				.set("spark.cores.max", "2").set("spark.executor.memory", "24g")
 		/* .set("spark.submit.deployMode", "cluster") */;
 
 		SharedUimaProcessor processor = new SharedUimaProcessor(configuration);
@@ -43,9 +43,13 @@ public class ExamplePipelineProcessor {
 	private static void printBenchmark(final CollectionReaderDescription reader,
 			final AnalysisEngineDescription pipeline) {
 
-		SparkConf configuration = new SparkConf().setMaster("spark://master:7077")
+		// @formatter:off
+		SparkConf configuration = new SparkConf()
+				.setMaster("spark://master:7077")
 				.setAppName(ExamplePipelineProcessor.class.getSimpleName() + " (Spark Example)")
-				.set("spark.cores.max", "2").set("spark.executor.memory", "2g");
+				.set("spark.cores.max", "2")
+				.set("spark.executor.memory", "16g");
+		// @formatter:on
 
 		BenchmarkResult result = Benchmarks.benchmark(reader, pipeline, configuration);
 
