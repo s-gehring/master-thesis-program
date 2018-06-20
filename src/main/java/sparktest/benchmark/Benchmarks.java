@@ -2,6 +2,7 @@ package sparktest.benchmark;
 
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CAS;
@@ -10,20 +11,23 @@ import org.apache.uima.collection.CollectionReaderDescription;
 import sparktest.SharedUimaProcessor;
 
 public class Benchmarks {
+	private static final Logger LOGGER = Logger.getLogger(Benchmarks.class);
+
 	public static BenchmarkResult benchmark(final CollectionReaderDescription reader,
 			final AnalysisEngineDescription pipeline, final SparkConf configuration) {
 
 		BenchmarkResult benchmark = new BenchmarkResult();
-
+		LOGGER.info("Initialize Benchmark...");
 		benchmark.startMeasurement("initialization");
 		SharedUimaProcessor processor = new SharedUimaProcessor(configuration);
 		benchmark.endMeasurement("initialization");
+		LOGGER.info("Finished benchmark initialization. Starting analysis...");
 		benchmark.startMeasurement("analysis");
 		Iterator<CAS> results = processor.process(reader, pipeline);
 		benchmark.endMeasurement("analysis");
-
+		LOGGER.info("Finished analysis.");
 		if (!results.hasNext()) {
-			System.exit(1);
+			throw new RuntimeException("Failed to get any results back from the pipeline.");
 		}
 		int i = 0;
 
