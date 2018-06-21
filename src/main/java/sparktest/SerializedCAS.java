@@ -17,9 +17,11 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasCreationUtils;
 import org.xml.sax.SAXException;
 
+import sparktest.example.RestLogger;
+
 public class SerializedCAS implements Serializable {
 
-	private transient static final Logger LOGGER = Logger.getLogger(SerializedCAS.class);
+	private transient static final RestLogger LOGGER = new RestLogger(Logger.getLogger(SerializedCAS.class));
 	private transient String preview = null;
 	private byte[] content;
 	private static final int MAX_PREVIEW_LENGTH = 250;

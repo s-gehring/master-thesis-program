@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -20,6 +21,7 @@ import org.apache.uima.util.CasCreationUtils;
 public class SharedUimaProcessor {
 
 	private SparkConf sparkConfiguration;
+	private final Logger LOGGER;
 
 	public static JavaRDD<SerializedCAS> readDocuments(final CollectionReader reader,
 			final JavaSparkContext sparkContext, final AnalysisEngineDescription pipelineDescription) {
@@ -43,6 +45,11 @@ public class SharedUimaProcessor {
 	}
 
 	public SharedUimaProcessor(final SparkConf sparkConfiguration) {
+		this(sparkConfiguration, Logger.getLogger(SharedUimaProcessor.class));
+	}
+
+	public SharedUimaProcessor(final SparkConf sparkConfiguration, final Logger logger) {
+		this.LOGGER = logger;
 		this.sparkConfiguration = sparkConfiguration;
 	}
 
@@ -51,20 +58,20 @@ public class SharedUimaProcessor {
 		Iterator<SerializedCAS> serializedResultIterator;
 		List<SerializedCAS> collectedResults;
 		try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
-
+			this.LOGGER.info("Preparing to read documents.");
 			CollectionReader reader;
 			try {
 				reader = CollectionReaderFactory.createReader(readerDescription);
 			} catch (ResourceInitializationException e) {
 				throw new RuntimeException("Error instantiating the collection reader.", e);
 			}
-
+			this.LOGGER.info("Prepared document reader. Proceed to actually read...");
 			JavaRDD<SerializedCAS> documents = readDocuments(reader, sparkContext, pipelineDescription);
-			System.out.println(documents.count() + " elements found to be processed.");
+			this.LOGGER.info(documents.count() + " elements found to be processed.");
 			JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
-			System.out.println(result.count() + " elements processed.");
+			this.LOGGER.info(result.count() + " elements processed.");
 			collectedResults = result.collect();
-			System.out.println(collectedResults.size() + " elements retrieved.");
+			this.LOGGER.info(collectedResults.size() + " elements retrieved.");
 			serializedResultIterator = result.collect().iterator();
 		}
 		return new CASIterator(serializedResultIterator, pipelineDescription);

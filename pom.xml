@@ -44,7 +44,7 @@
 			<artifactId>uimafit-core</artifactId>
 			<version>2.4.0</version>
 		</dependency>
-		<!-- 
+		
 		<dependency>
 			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
 			<artifactId>de.tudarmstadt.ukp.dkpro.core.matetools-model-lemmatizer-en-conll2009</artifactId>
@@ -70,7 +70,7 @@
 			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-model-tagger-en-maxent</artifactId>
 			<version>20120616.1</version>
 		</dependency>
-		-->
+		
 		<dependency>
 			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
 			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-asl</artifactId>
