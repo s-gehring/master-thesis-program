@@ -23,9 +23,8 @@ public class SharedUimaProcessor {
 	private SparkConf sparkConfiguration;
 	private final Logger LOGGER;
 
-	public static JavaRDD<SerializedCAS> readDocuments(final CollectionReader reader,
-			final JavaSparkContext sparkContext, final AnalysisEngineDescription pipelineDescription,
-			final int partitionNum) {
+	public static List<SerializedCAS> readDocuments(final CollectionReader reader, final JavaSparkContext sparkContext,
+			final AnalysisEngineDescription pipelineDescription) {
 		CAS cas;
 		try {
 			cas = CasCreationUtils.createCas(pipelineDescription);
@@ -42,7 +41,7 @@ public class SharedUimaProcessor {
 		} catch (CollectionException | IOException e) {
 			throw new RuntimeException("There was an error collecting all the documents.", e);
 		}
-		return sparkContext.parallelize(result, partitionNum);
+		return result;
 	}
 
 	public SharedUimaProcessor(final SparkConf sparkConfiguration) {
@@ -54,13 +53,34 @@ public class SharedUimaProcessor {
 		this.sparkConfiguration = sparkConfiguration;
 	}
 
+	private static int minMax(final int lowerBound, final int target, final int upperBound) {
+		if (target > upperBound) {
+			return upperBound;
+		}
+		if (target < lowerBound) {
+			return lowerBound;
+		}
+		return target;
+	}
+
+	private static int calculatePartitionNumber(final List<SerializedCAS> underlyingList,
+			final JavaSparkContext sparkContext) {
+		// Arbitrary values.
+		int min = 30, max = 100;
+
+		return minMax(min, underlyingList.size() / 30, max);
+
+	}
+
 	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription) {
+		return this.process(readerDescription, pipelineDescription, -1);
+	}
+
+	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
+			final AnalysisEngineDescription pipelineDescription, final int partitionNum) {
 		Iterator<SerializedCAS> serializedResultIterator;
 		List<SerializedCAS> collectedResults;
-
-		int partitionNum = 100;
-		// TODO: sensible value.
 
 		try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
 			this.LOGGER.info("Preparing to read documents.");
@@ -71,7 +91,16 @@ public class SharedUimaProcessor {
 				throw new RuntimeException("Error instantiating the collection reader.", e);
 			}
 			this.LOGGER.info("Prepared document reader. Proceed to actually read...");
-			JavaRDD<SerializedCAS> documents = readDocuments(reader, sparkContext, pipelineDescription, partitionNum);
+			JavaRDD<SerializedCAS> documents;
+			List<SerializedCAS> c = readDocuments(reader, sparkContext, pipelineDescription);
+			if (partitionNum == 0) {
+				documents = sparkContext.parallelize(c);
+			} else if (partitionNum < 0) {
+				documents = sparkContext.parallelize(c, calculatePartitionNumber(c, sparkContext));
+			} else {
+				documents = sparkContext.parallelize(c, partitionNum);
+			}
+
 			this.LOGGER.info(documents.count() + " elements found to be processed.");
 
 			this.LOGGER.info("Elements are partitioned into " + documents.getNumPartitions() + " slices.");

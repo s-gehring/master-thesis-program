@@ -3,23 +3,18 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fraunhofer.fkie.gehring</groupId>
-	<artifactId>sparktest</artifactId>
+	<artifactId>shared-uima-processor</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<dkpro.core.version>1.9.0</dkpro.core.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<artifactId>dkpro-core-io-tika-asl</artifactId>
-			<groupId>org.dkpro.core</groupId>
-			<version>${dkpro.core.version}</version>
-		</dependency>
+		
 
 
 		<!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core -->
@@ -29,13 +24,7 @@
 			<version>2.3.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/junit/junit -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
-		</dependency>
+		
 
 
 		<!-- https://mvnrepository.com/artifact/org.apache.uima/uimafit-core -->
@@ -45,49 +34,6 @@
 			<version>2.4.0</version>
 		</dependency>
 		
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.matetools-model-lemmatizer-en-conll2009</artifactId>
-			<version>20130117.1</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-model-ner-en-person</artifactId>
-			<version>20130624.1</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-model-sentence-en-maxent</artifactId>
-			<version>20120616.1</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-model-token-en-maxent</artifactId>
-			<version>20120616.1</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-model-tagger-en-maxent</artifactId>
-			<version>20120616.1</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.opennlp-asl</artifactId>
-			<version>${dkpro.core.version}</version>
-		</dependency>
-		<dependency>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.matetools-gpl</artifactId>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<version>${dkpro.core.version}</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/de.tudarmstadt.ukp.dkpro.core/de.tudarmstadt.ukp.dkpro.core.api.metadata-asl -->
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.core.api.metadata-asl</artifactId>
-			<version>${dkpro.core.version}</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
