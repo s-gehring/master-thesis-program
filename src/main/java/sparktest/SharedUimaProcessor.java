@@ -24,7 +24,8 @@ public class SharedUimaProcessor {
 	private final Logger LOGGER;
 
 	public static JavaRDD<SerializedCAS> readDocuments(final CollectionReader reader,
-			final JavaSparkContext sparkContext, final AnalysisEngineDescription pipelineDescription) {
+			final JavaSparkContext sparkContext, final AnalysisEngineDescription pipelineDescription,
+			final int partitionNum) {
 		CAS cas;
 		try {
 			cas = CasCreationUtils.createCas(pipelineDescription);
@@ -41,7 +42,7 @@ public class SharedUimaProcessor {
 		} catch (CollectionException | IOException e) {
 			throw new RuntimeException("There was an error collecting all the documents.", e);
 		}
-		return sparkContext.parallelize(result);
+		return sparkContext.parallelize(result, partitionNum);
 	}
 
 	public SharedUimaProcessor(final SparkConf sparkConfiguration) {
@@ -57,6 +58,10 @@ public class SharedUimaProcessor {
 			final AnalysisEngineDescription pipelineDescription) {
 		Iterator<SerializedCAS> serializedResultIterator;
 		List<SerializedCAS> collectedResults;
+
+		int partitionNum = 100;
+		// TODO: sensible value.
+
 		try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
 			this.LOGGER.info("Preparing to read documents.");
 			CollectionReader reader;
@@ -66,9 +71,12 @@ public class SharedUimaProcessor {
 				throw new RuntimeException("Error instantiating the collection reader.", e);
 			}
 			this.LOGGER.info("Prepared document reader. Proceed to actually read...");
-			JavaRDD<SerializedCAS> documents = readDocuments(reader, sparkContext, pipelineDescription);
+			JavaRDD<SerializedCAS> documents = readDocuments(reader, sparkContext, pipelineDescription, partitionNum);
 			this.LOGGER.info(documents.count() + " elements found to be processed.");
+
+			this.LOGGER.info("Elements are partitioned into " + documents.getNumPartitions() + " slices.");
 			JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
+
 			this.LOGGER.info(result.count() + " elements processed.");
 			collectedResults = result.collect();
 			this.LOGGER.info(collectedResults.size() + " elements retrieved.");
