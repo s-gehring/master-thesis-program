@@ -1,4 +1,4 @@
-package sparktest;
+package gehring.uima.distributed;
 
 import java.util.Collection;
 import java.util.Iterator;

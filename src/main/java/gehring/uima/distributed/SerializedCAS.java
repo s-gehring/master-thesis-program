@@ -1,4 +1,4 @@
-package sparktest;
+package gehring.uima.distributed;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package sparktest.compression;
+package gehring.uima.distributed.compression;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 

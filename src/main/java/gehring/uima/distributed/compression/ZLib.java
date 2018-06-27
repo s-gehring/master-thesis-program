@@ -1,4 +1,4 @@
-package sparktest.compression;
+package gehring.uima.distributed.compression;
 
 import java.io.IOException;
 import java.util.zip.DataFormatException;
