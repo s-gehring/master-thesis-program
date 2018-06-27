@@ -9,10 +9,9 @@ import org.apache.uima.cas.CAS;
 import org.apache.uima.collection.CollectionReaderDescription;
 
 import sparktest.SharedUimaProcessor;
-import sparktest.example.RestLogger;
 
 public class Benchmarks {
-	private static final RestLogger LOGGER = new RestLogger(Logger.getLogger(Benchmarks.class));
+	private static final Logger LOGGER = Logger.getLogger(Benchmarks.class);
 
 	public static BenchmarkResult benchmark(final CollectionReaderDescription reader,
 			final AnalysisEngineDescription pipeline, final SparkConf configuration) {
@@ -21,7 +20,7 @@ public class Benchmarks {
 		LOGGER.info("Initialize Benchmark...");
 		benchmark.startMeasurement("initialization");
 		SharedUimaProcessor processor = new SharedUimaProcessor(configuration,
-				new RestLogger(Logger.getLogger(SharedUimaProcessor.class)));
+				Logger.getLogger(SharedUimaProcessor.class));
 		benchmark.endMeasurement("initialization");
 		LOGGER.info("Finished benchmark initialization. Starting analysis...");
 		benchmark.startMeasurement("analysis");

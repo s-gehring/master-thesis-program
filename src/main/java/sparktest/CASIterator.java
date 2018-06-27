@@ -7,11 +7,9 @@ import org.apache.log4j.Logger;
 import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CAS;
 
-import sparktest.example.RestLogger;
-
 public class CASIterator implements Iterator<CAS> {
 
-	private static final RestLogger LOGGER = new RestLogger(Logger.getLogger(CASIterator.class));
+	private static final Logger LOGGER = Logger.getLogger(CASIterator.class);
 	private Iterator<CAS> underlyingIterator;
 
 	private LinkedList<CAS> underlyingList = new LinkedList<>();
@@ -25,7 +23,7 @@ public class CASIterator implements Iterator<CAS> {
 		if (pipelineDescription == null) {
 			throw new NullPointerException("Provided pipeline description is null.");
 		}
-
+		LOGGER.info("Trying to extract CAS.");
 		int counter = 0;
 		while (underlyingIterator.hasNext()) {
 			SerializedCAS sCas = underlyingIterator.next();

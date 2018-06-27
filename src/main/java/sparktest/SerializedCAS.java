@@ -17,11 +17,9 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasCreationUtils;
 import org.xml.sax.SAXException;
 
-import sparktest.example.RestLogger;
-
 public class SerializedCAS implements Serializable {
 
-	private transient static final RestLogger LOGGER = new RestLogger(Logger.getLogger(SerializedCAS.class));
+	private static final Logger LOGGER = Logger.getLogger(SerializedCAS.class);
 	private transient String preview = null;
 	private byte[] content;
 	private static final int MAX_PREVIEW_LENGTH = 250;
@@ -43,7 +41,7 @@ public class SerializedCAS implements Serializable {
 	}
 
 	public SerializedCAS(final CAS cas) {
-
+		LOGGER.info("Serializing CAS...");
 		if (cas == null) {
 			this.content = null;
 			return;
@@ -60,6 +58,7 @@ public class SerializedCAS implements Serializable {
 					cas.getDocumentText().length() > 250 ? 250 : cas.getDocumentText().length());
 			throw new RuntimeException("Error serializing cas into bytes.", e);
 		}
+		LOGGER.info("Done serializing CAS.");
 	}
 
 	public void populateCAS(final CAS cas) {
@@ -67,9 +66,9 @@ public class SerializedCAS implements Serializable {
 			throw new NullPointerException("Can't populate CAS, since the serialized CAS was null.");
 		}
 		try (InputStream casBytes = new ByteArrayInputStream(this.content)) {
-
+			LOGGER.info("Trying to deserialize CAS...");
 			XmiCasDeserializer.deserialize(casBytes, cas);
-
+			LOGGER.info("Done deserializing CAS.");
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary input stream.", e);
 		} catch (SAXException e) {

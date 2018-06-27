@@ -15,7 +15,7 @@ import sparktest.benchmark.Benchmarks;
 
 public class ExamplePipelineProcessor {
 
-	private static final RestLogger LOGGER = new RestLogger(Logger.getLogger(ExamplePipelineProcessor.class));
+	private static final Logger LOGGER = Logger.getLogger(ExamplePipelineProcessor.class);
 	/*
 	 * public static void exampleSimplePipeline() { CollectionReaderDescription
 	 * reader = SampleCollectionReaderFactory.getSampleTextReaderDescription();
@@ -48,7 +48,7 @@ public class ExamplePipelineProcessor {
 		// @formatter:off
 		SparkConf configuration = new SparkConf().setMaster("spark://master:7077")
 				.setAppName(ExamplePipelineProcessor.class.getSimpleName() + " (Spark Example)")
-				.set("spark.cores.max", "2").set("spark.executor.memory", "16g");
+				/*.set("spark.cores.max", "2")*/.set("spark.executor.memory", "2g");
 		// @formatter:on
 		LOGGER.info("Configured Spark.");
 
