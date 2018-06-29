@@ -23,11 +23,12 @@ public class ZLib implements CompressionAlgorithm {
 	public ByteArrayOutputStream compress(final ByteArrayOutputStream input) {
 		Deflater deflater = new Deflater();
 		deflater.setInput(input.toByteArray());
-
 		ByteArrayOutputStream compressedOutput = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
+		deflater.finish();
 		while (!deflater.finished()) {
 			int processedBytes = deflater.deflate(buffer);
+
 			compressedOutput.write(buffer, 0, processedBytes);
 		}
 		try {
@@ -46,6 +47,7 @@ public class ZLib implements CompressionAlgorithm {
 		@SuppressWarnings("resource")
 		ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
+
 		while (!inflater.finished()) {
 			int processedBytes;
 			try {

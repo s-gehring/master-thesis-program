@@ -48,8 +48,15 @@ public class SerializedCAS implements Serializable {
 		this(cas, NoCompression.getInstance());
 	}
 
+	public int size() {
+		if (this.content == null) {
+			return 0;
+		}
+		return this.content.length;
+	}
+
 	public SerializedCAS(final CAS cas, final CompressionAlgorithm compressionAlgorithm) {
-		LOGGER.info("Serializing CAS...");
+
 		if (cas == null) {
 			this.content = null;
 			return;
@@ -64,9 +71,13 @@ public class SerializedCAS implements Serializable {
 
 		this.generatePreview(cas);
 		try (ByteArrayOutputStream casBytes = new ByteArrayOutputStream()) {
-
+			LOGGER.info("Serializing CAS...");
 			XmiCasSerializer.serialize(cas, casBytes);
+			LOGGER.info(
+					"Compressing " + casBytes.size() + " bytes with '" + this.compression.getClass().getName() + "'.");
 			try (ByteArrayOutputStream compressedBytes = this.compression.compress(casBytes)) {
+				LOGGER.info("Successfully compressed CAS from size " + casBytes.size() + "B to size "
+						+ compressedBytes.size() + "B.");
 				this.content = compressedBytes.toByteArray();
 			}
 
