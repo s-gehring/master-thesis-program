@@ -18,8 +18,10 @@ public class NoCompression implements CompressionAlgorithm {
 	}
 
 	@Override
-	public ByteArrayOutputStream decompress(final ByteArrayOutputStream input) {
-		return input;
+	public ByteArrayOutputStream decompress(final byte[] input) {
+		ByteArrayOutputStream result = new ByteArrayOutputStream(input.length);
+		result.write(input, 0, input.length);
+		return result;
 	}
 
 }

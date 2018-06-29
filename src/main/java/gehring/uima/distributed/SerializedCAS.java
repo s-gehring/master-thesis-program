@@ -17,12 +17,16 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasCreationUtils;
 import org.xml.sax.SAXException;
 
+import gehring.uima.distributed.compression.CompressionAlgorithm;
+import gehring.uima.distributed.compression.NoCompression;
+
 public class SerializedCAS implements Serializable {
 
 	private static final Logger LOGGER = Logger.getLogger(SerializedCAS.class);
 	private transient String preview = null;
 	private byte[] content;
 	private static final int MAX_PREVIEW_LENGTH = 250;
+	private CompressionAlgorithm compression;
 
 	private void generatePreview(final CAS cas) {
 		if (this.preview != null) {
@@ -41,15 +45,31 @@ public class SerializedCAS implements Serializable {
 	}
 
 	public SerializedCAS(final CAS cas) {
+		this(cas, NoCompression.getInstance());
+	}
+
+	public SerializedCAS(final CAS cas, final CompressionAlgorithm compressionAlgorithm) {
 		LOGGER.info("Serializing CAS...");
 		if (cas == null) {
 			this.content = null;
 			return;
 		}
+		if (compressionAlgorithm == null) {
+			LOGGER.warn("Calling CAS serialization with null compression. Use " + NoCompression.class.getName()
+					+ " instead.");
+			this.compression = NoCompression.getInstance();
+		} else {
+			this.compression = compressionAlgorithm;
+		}
+
 		this.generatePreview(cas);
 		try (ByteArrayOutputStream casBytes = new ByteArrayOutputStream()) {
+
 			XmiCasSerializer.serialize(cas, casBytes);
-			this.content = casBytes.toByteArray();
+			try (ByteArrayOutputStream compressedBytes = this.compression.compress(casBytes)) {
+				this.content = compressedBytes.toByteArray();
+			}
+
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary output stream.", e);
 		} catch (SAXException e) {
@@ -65,7 +85,8 @@ public class SerializedCAS implements Serializable {
 		if (this.content == null) {
 			throw new NullPointerException("Can't populate CAS, since the serialized CAS was null.");
 		}
-		try (InputStream casBytes = new ByteArrayInputStream(this.content)) {
+		byte[] uncompressedContent = this.compression.decompress(this.content).toByteArray();
+		try (InputStream casBytes = new ByteArrayInputStream(uncompressedContent)) {
 			LOGGER.info("Trying to deserialize CAS...");
 			XmiCasDeserializer.deserialize(casBytes, cas);
 			LOGGER.info("Done deserializing CAS.");

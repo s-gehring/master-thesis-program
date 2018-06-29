@@ -11,6 +11,14 @@ import org.apache.log4j.Logger;
 public class ZLib implements CompressionAlgorithm {
 	private static final Logger LOGGER = Logger.getLogger(ZLib.class);
 
+	private static ZLib instance = null;
+	public synchronized static ZLib getInstance() {
+		return instance == null ? instance = new ZLib() : instance;
+	}
+
+	private ZLib() {
+	}
+
 	@Override
 	public ByteArrayOutputStream compress(final ByteArrayOutputStream input) {
 		Deflater deflater = new Deflater();
@@ -31,9 +39,9 @@ public class ZLib implements CompressionAlgorithm {
 	}
 
 	@Override
-	public ByteArrayOutputStream decompress(final ByteArrayOutputStream input) {
+	public ByteArrayOutputStream decompress(final byte[] input) {
 		Inflater inflater = new Inflater();
-		inflater.setInput(input.toByteArray());
+		inflater.setInput(input);
 
 		@SuppressWarnings("resource")
 		ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
@@ -46,11 +54,6 @@ public class ZLib implements CompressionAlgorithm {
 				throw new RuntimeException("Failed to decompress given data.", e);
 			}
 			decompressedOutput.write(buffer, 0, processedBytes);
-		}
-		try {
-			input.close();
-		} catch (IOException e) {
-			LOGGER.warn("Failed to close input stream of compressed data.", e);
 		}
 		return decompressedOutput;
 	}

@@ -18,12 +18,16 @@ import org.apache.uima.fit.factory.CollectionReaderFactory;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasCreationUtils;
 
+import gehring.uima.distributed.compression.CompressionAlgorithm;
+import gehring.uima.distributed.compression.NoCompression;
+
 public class SharedUimaProcessor {
 
 	private SparkConf sparkConfiguration;
 	private final Logger LOGGER;
+	private CompressionAlgorithm casCompression;
 
-	public static List<SerializedCAS> readDocuments(final CollectionReader reader, final JavaSparkContext sparkContext,
+	public List<SerializedCAS> readDocuments(final CollectionReader reader, final JavaSparkContext sparkContext,
 			final AnalysisEngineDescription pipelineDescription) {
 		CAS cas;
 		try {
@@ -35,7 +39,7 @@ public class SharedUimaProcessor {
 		try {
 			while (reader.hasNext()) {
 				reader.getNext(cas);
-				result.add(new SerializedCAS(cas));
+				result.add(new SerializedCAS(cas, this.casCompression));
 				cas.reset();
 			}
 		} catch (CollectionException | IOException e) {
@@ -45,11 +49,17 @@ public class SharedUimaProcessor {
 	}
 
 	public SharedUimaProcessor(final SparkConf sparkConfiguration) {
-		this(sparkConfiguration, Logger.getLogger(SharedUimaProcessor.class));
+		this(sparkConfiguration, NoCompression.getInstance(), Logger.getLogger(SharedUimaProcessor.class));
 	}
 
-	public SharedUimaProcessor(final SparkConf sparkConfiguration, final Logger logger) {
+	public SharedUimaProcessor(final SparkConf sparkConfiguration, final CompressionAlgorithm compression) {
+		this(sparkConfiguration, compression, Logger.getLogger(SharedUimaProcessor.class));
+	}
+
+	public SharedUimaProcessor(final SparkConf sparkConfiguration, final CompressionAlgorithm compression,
+			final Logger logger) {
 		this.LOGGER = logger;
+		this.casCompression = compression;
 		this.sparkConfiguration = sparkConfiguration;
 	}
 
@@ -92,7 +102,7 @@ public class SharedUimaProcessor {
 			}
 			this.LOGGER.info("Prepared document reader. Proceed to actually read...");
 			JavaRDD<SerializedCAS> documents;
-			List<SerializedCAS> c = readDocuments(reader, sparkContext, pipelineDescription);
+			List<SerializedCAS> c = this.readDocuments(reader, sparkContext, pipelineDescription);
 			if (partitionNum == 0) {
 				documents = sparkContext.parallelize(c);
 			} else if (partitionNum < 0) {
