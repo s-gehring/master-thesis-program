@@ -1,12 +1,10 @@
 package gehring.uima.distributed;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.uima.analysis_engine.AnalysisEngineDescription;
@@ -23,12 +21,11 @@ import gehring.uima.distributed.compression.NoCompression;
 
 public class SharedUimaProcessor {
 
-	private SparkConf sparkConfiguration = null;
 	private JavaSparkContext sparkContext = null;
 	private final Logger LOGGER;
 	private CompressionAlgorithm casCompression;
 
-	public List<SerializedCAS> readDocuments(final CollectionReader reader, final JavaSparkContext sparkContext,
+	public List<SerializedCAS> readDocuments(final CollectionReader reader,
 			final AnalysisEngineDescription pipelineDescription) {
 		CAS cas;
 		try {
@@ -49,34 +46,19 @@ public class SharedUimaProcessor {
 		return result;
 	}
 
-	public SharedUimaProcessor(final SparkConf sparkConfiguration) {
+	public SharedUimaProcessor(final JavaSparkContext sparkConfiguration) {
 		this(sparkConfiguration, NoCompression.getInstance(), Logger.getLogger(SharedUimaProcessor.class));
 	}
 
-	public SharedUimaProcessor(final SparkConf sparkConfiguration, final CompressionAlgorithm compression) {
+	public SharedUimaProcessor(final JavaSparkContext sparkConfiguration, final CompressionAlgorithm compression) {
 		this(sparkConfiguration, compression, Logger.getLogger(SharedUimaProcessor.class));
 	}
 
-	public SharedUimaProcessor(final SparkConf sparkConfiguration, final CompressionAlgorithm compression,
+	public SharedUimaProcessor(final JavaSparkContext sparkConfiguration, final CompressionAlgorithm compression,
 			final Logger logger) {
 		this.LOGGER = logger;
 		this.casCompression = compression;
-		this.sparkConfiguration = sparkConfiguration;
-	}
-
-	public SharedUimaProcessor(final JavaSparkContext sparkContext) {
-		this(sparkContext, NoCompression.getInstance(), Logger.getLogger(SharedUimaProcessor.class));
-	}
-
-	public SharedUimaProcessor(final JavaSparkContext sparkContext, final CompressionAlgorithm compression) {
-		this(sparkContext, compression, Logger.getLogger(SharedUimaProcessor.class));
-	}
-
-	public SharedUimaProcessor(final JavaSparkContext sparkContext, final CompressionAlgorithm compression,
-			final Logger logger) {
-		this.LOGGER = logger;
-		this.casCompression = compression;
-		this.sparkContext = sparkContext;
+		this.sparkContext = sparkConfiguration;
 	}
 
 	private static int minMax(final int lowerBound, final int target, final int upperBound) {
@@ -98,11 +80,9 @@ public class SharedUimaProcessor {
 
 	}
 
-	private Iterator<SerializedCAS> processWithContext(final CollectionReaderDescription readerDescription,
+	private AnalysisResult processWithContext(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription, final int partitionNum,
 			final JavaSparkContext sparkContext) {
-		Iterator<SerializedCAS> serializedResultIterator;
-		List<SerializedCAS> collectedResults;
 		this.LOGGER.info("Preparing to read documents.");
 		CollectionReader reader;
 		try {
@@ -112,7 +92,7 @@ public class SharedUimaProcessor {
 		}
 		this.LOGGER.info("Prepared document reader. Proceed to actually read...");
 		JavaRDD<SerializedCAS> documents;
-		List<SerializedCAS> c = this.readDocuments(reader, sparkContext, pipelineDescription);
+		List<SerializedCAS> c = this.readDocuments(reader, pipelineDescription);
 		if (partitionNum == 0) {
 			documents = sparkContext.parallelize(c);
 		} else if (partitionNum < 0) {
@@ -125,35 +105,22 @@ public class SharedUimaProcessor {
 
 		this.LOGGER.info("Elements are partitioned into " + documents.getNumPartitions() + " slices.");
 
-		// Todo: Not collect, but do something else.
 		JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
 
-		this.LOGGER.info(result.count() + " elements processed.");
-		collectedResults = result.collect();
-		this.LOGGER.info(collectedResults.size() + " elements retrieved.");
-		serializedResultIterator = result.collect().iterator();
+		AnalysisResult resultWrapper = new AnalysisResult(result, pipelineDescription);
 
-		return serializedResultIterator;
+		return resultWrapper;
 	}
 
-	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
+	public AnalysisResult process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription) {
 		return this.process(readerDescription, pipelineDescription, -1);
 	}
 
-	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
+	public AnalysisResult process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription, final int partitionNum) {
-		Iterator<SerializedCAS> serializedResultIterator;
-		if (this.sparkContext == null) {
-			try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
-				serializedResultIterator = this.processWithContext(readerDescription, pipelineDescription, partitionNum,
-						sparkContext);
-			}
-		} else {
-			serializedResultIterator = this.processWithContext(readerDescription, pipelineDescription, partitionNum,
-					this.sparkContext);
-		}
-		return new CASIterator(serializedResultIterator, pipelineDescription);
+		return this.processWithContext(readerDescription, pipelineDescription, partitionNum, this.sparkContext);
+
 	}
 
 }
