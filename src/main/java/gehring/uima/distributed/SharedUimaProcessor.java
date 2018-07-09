@@ -23,7 +23,8 @@ import gehring.uima.distributed.compression.NoCompression;
 
 public class SharedUimaProcessor {
 
-	private SparkConf sparkConfiguration;
+	private SparkConf sparkConfiguration = null;
+	private JavaSparkContext sparkContext = null;
 	private final Logger LOGGER;
 	private CompressionAlgorithm casCompression;
 
@@ -63,6 +64,21 @@ public class SharedUimaProcessor {
 		this.sparkConfiguration = sparkConfiguration;
 	}
 
+	public SharedUimaProcessor(final JavaSparkContext sparkContext) {
+		this(sparkContext, NoCompression.getInstance(), Logger.getLogger(SharedUimaProcessor.class));
+	}
+
+	public SharedUimaProcessor(final JavaSparkContext sparkContext, final CompressionAlgorithm compression) {
+		this(sparkContext, compression, Logger.getLogger(SharedUimaProcessor.class));
+	}
+
+	public SharedUimaProcessor(final JavaSparkContext sparkContext, final CompressionAlgorithm compression,
+			final Logger logger) {
+		this.LOGGER = logger;
+		this.casCompression = compression;
+		this.sparkContext = sparkContext;
+	}
+
 	private static int minMax(final int lowerBound, final int target, final int upperBound) {
 		if (target > upperBound) {
 			return upperBound;
@@ -82,6 +98,44 @@ public class SharedUimaProcessor {
 
 	}
 
+	private Iterator<SerializedCAS> processWithContext(final CollectionReaderDescription readerDescription,
+			final AnalysisEngineDescription pipelineDescription, final int partitionNum,
+			final JavaSparkContext sparkContext) {
+		Iterator<SerializedCAS> serializedResultIterator;
+		List<SerializedCAS> collectedResults;
+		this.LOGGER.info("Preparing to read documents.");
+		CollectionReader reader;
+		try {
+			reader = CollectionReaderFactory.createReader(readerDescription);
+		} catch (ResourceInitializationException e) {
+			throw new RuntimeException("Error instantiating the collection reader.", e);
+		}
+		this.LOGGER.info("Prepared document reader. Proceed to actually read...");
+		JavaRDD<SerializedCAS> documents;
+		List<SerializedCAS> c = this.readDocuments(reader, sparkContext, pipelineDescription);
+		if (partitionNum == 0) {
+			documents = sparkContext.parallelize(c);
+		} else if (partitionNum < 0) {
+			documents = sparkContext.parallelize(c, calculatePartitionNumber(c, sparkContext));
+		} else {
+			documents = sparkContext.parallelize(c, partitionNum);
+		}
+
+		this.LOGGER.info(documents.count() + " elements found to be processed.");
+
+		this.LOGGER.info("Elements are partitioned into " + documents.getNumPartitions() + " slices.");
+
+		// Todo: Not collect, but do something else.
+		JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
+
+		this.LOGGER.info(result.count() + " elements processed.");
+		collectedResults = result.collect();
+		this.LOGGER.info(collectedResults.size() + " elements retrieved.");
+		serializedResultIterator = result.collect().iterator();
+
+		return serializedResultIterator;
+	}
+
 	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription) {
 		return this.process(readerDescription, pipelineDescription, -1);
@@ -90,36 +144,14 @@ public class SharedUimaProcessor {
 	public Iterator<CAS> process(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription, final int partitionNum) {
 		Iterator<SerializedCAS> serializedResultIterator;
-		List<SerializedCAS> collectedResults;
-
-		try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
-			this.LOGGER.info("Preparing to read documents.");
-			CollectionReader reader;
-			try {
-				reader = CollectionReaderFactory.createReader(readerDescription);
-			} catch (ResourceInitializationException e) {
-				throw new RuntimeException("Error instantiating the collection reader.", e);
+		if (this.sparkContext == null) {
+			try (JavaSparkContext sparkContext = new JavaSparkContext(this.sparkConfiguration)) {
+				serializedResultIterator = this.processWithContext(readerDescription, pipelineDescription, partitionNum,
+						sparkContext);
 			}
-			this.LOGGER.info("Prepared document reader. Proceed to actually read...");
-			JavaRDD<SerializedCAS> documents;
-			List<SerializedCAS> c = this.readDocuments(reader, sparkContext, pipelineDescription);
-			if (partitionNum == 0) {
-				documents = sparkContext.parallelize(c);
-			} else if (partitionNum < 0) {
-				documents = sparkContext.parallelize(c, calculatePartitionNumber(c, sparkContext));
-			} else {
-				documents = sparkContext.parallelize(c, partitionNum);
-			}
-
-			this.LOGGER.info(documents.count() + " elements found to be processed.");
-
-			this.LOGGER.info("Elements are partitioned into " + documents.getNumPartitions() + " slices.");
-			JavaRDD<SerializedCAS> result = documents.flatMap(new FlatProcess(pipelineDescription));
-
-			this.LOGGER.info(result.count() + " elements processed.");
-			collectedResults = result.collect();
-			this.LOGGER.info(collectedResults.size() + " elements retrieved.");
-			serializedResultIterator = result.collect().iterator();
+		} else {
+			serializedResultIterator = this.processWithContext(readerDescription, pipelineDescription, partitionNum,
+					this.sparkContext);
 		}
 		return new CASIterator(serializedResultIterator, pipelineDescription);
 	}
