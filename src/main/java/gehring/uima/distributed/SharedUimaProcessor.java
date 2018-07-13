@@ -61,22 +61,13 @@ public class SharedUimaProcessor {
 		this.sparkContext = sparkConfiguration;
 	}
 
-	private static int minMax(final int lowerBound, final int target, final int upperBound) {
-		if (target > upperBound) {
-			return upperBound;
-		}
-		if (target < lowerBound) {
-			return lowerBound;
-		}
-		return target;
-	}
-
+	@SuppressWarnings("unused")
 	private static int calculatePartitionNumber(final List<SerializedCAS> underlyingList,
 			final JavaSparkContext sparkContext) {
 		// Arbitrary values.
-		int min = 30, max = 100;
-
-		return minMax(min, underlyingList.size() / 30, max);
+		// int min = 30, max = 100;
+		return underlyingList.size();
+		// return minMax(min, underlyingList.size() / 5, max);
 
 	}
 
@@ -90,7 +81,7 @@ public class SharedUimaProcessor {
 		} catch (ResourceInitializationException e) {
 			throw new RuntimeException("Error instantiating the collection reader.", e);
 		}
-		this.LOGGER.info("Prepared document reader. Proceed to actually read...");
+		this.LOGGER.trace("Prepared document reader. Proceed to actually read...");
 		JavaRDD<SerializedCAS> documents;
 		List<SerializedCAS> c = this.readDocuments(reader, pipelineDescription);
 		if (partitionNum == 0) {

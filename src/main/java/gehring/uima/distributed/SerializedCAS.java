@@ -71,12 +71,12 @@ public class SerializedCAS implements Serializable {
 
 		this.generatePreview(cas);
 		try (ByteArrayOutputStream casBytes = new ByteArrayOutputStream()) {
-			LOGGER.info("Serializing CAS...");
+			LOGGER.trace("Serializing CAS...");
 			XmiCasSerializer.serialize(cas, casBytes);
-			LOGGER.info(
+			LOGGER.debug(
 					"Compressing " + casBytes.size() + " bytes with '" + this.compression.getClass().getName() + "'.");
 			try (ByteArrayOutputStream compressedBytes = this.compression.compress(casBytes)) {
-				LOGGER.info("Successfully compressed CAS from size " + casBytes.size() + "B to size "
+				LOGGER.debug("Successfully compressed CAS from size " + casBytes.size() + "B to size "
 						+ compressedBytes.size() + "B.");
 				this.content = compressedBytes.toByteArray();
 			}
@@ -84,12 +84,12 @@ public class SerializedCAS implements Serializable {
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary output stream.", e);
 		} catch (SAXException e) {
-			System.out.println(cas.getDocumentText());
+
 			this.preview = cas.getDocumentText().substring(0,
 					cas.getDocumentText().length() > 250 ? 250 : cas.getDocumentText().length());
-			throw new RuntimeException("Error serializing cas into bytes.", e);
+			throw new RuntimeException("Error serializing CAS into bytes.", e);
 		}
-		LOGGER.info("Done serializing CAS.");
+		LOGGER.trace("Done serializing CAS.");
 	}
 
 	public void populateCAS(final CAS cas) {
@@ -98,9 +98,9 @@ public class SerializedCAS implements Serializable {
 		}
 		byte[] uncompressedContent = this.compression.decompress(this.content).toByteArray();
 		try (InputStream casBytes = new ByteArrayInputStream(uncompressedContent)) {
-			LOGGER.info("Trying to deserialize CAS...");
+			LOGGER.trace("Trying to deserialize CAS...");
 			XmiCasDeserializer.deserialize(casBytes, cas);
-			LOGGER.info("Done deserializing CAS.");
+			LOGGER.trace("Done deserializing CAS.");
 		} catch (IOException e) {
 			LOGGER.warn("Error closing temporary input stream.", e);
 		} catch (SAXException e) {

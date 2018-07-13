@@ -23,7 +23,7 @@ public class CASIterator implements Iterator<CAS> {
 		if (pipelineDescription == null) {
 			throw new NullPointerException("Provided pipeline description is null.");
 		}
-		LOGGER.info("Trying to extract CAS.");
+		LOGGER.debug("Trying to extract CAS.");
 		int counter = 0;
 		while (underlyingIterator.hasNext()) {
 			SerializedCAS sCas = underlyingIterator.next();
@@ -31,7 +31,7 @@ public class CASIterator implements Iterator<CAS> {
 			counter++;
 		}
 		this.underlyingIterator = this.underlyingList.iterator();
-		LOGGER.info("Successfully extracted " + counter + " CAS.");
+		LOGGER.debug("Successfully extracted " + counter + " CAS.");
 
 	}
 
