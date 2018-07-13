@@ -9,10 +9,13 @@
           value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
         </layout>
     </appender>
-
-    <root>
-        <level value="INFO" />
-        <appender-ref ref="console" />
-    </root>
+    
+    <Loggers>
+	    <logger name="gehring" level="all"/>
+	    <root>
+	        <level value="WARN" />
+	        <appender-ref ref="console" />
+	    </root>
+    </Loggers>
 
 </log4j:configuration>
