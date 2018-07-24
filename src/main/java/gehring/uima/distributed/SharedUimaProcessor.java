@@ -74,7 +74,7 @@ public class SharedUimaProcessor {
 	private AnalysisResult processWithContext(final CollectionReaderDescription readerDescription,
 			final AnalysisEngineDescription pipelineDescription, final int partitionNum,
 			final JavaSparkContext sparkContext) {
-		this.LOGGER.info("Preparing to read documents.");
+		this.LOGGER.info("Preparing to read documents. (Partition argument is '" + partitionNum + "')");
 		CollectionReader reader;
 		try {
 			reader = CollectionReaderFactory.createReader(readerDescription);
@@ -84,6 +84,10 @@ public class SharedUimaProcessor {
 		this.LOGGER.trace("Prepared document reader. Proceed to actually read...");
 		JavaRDD<SerializedCAS> documents;
 		List<SerializedCAS> c = this.readDocuments(reader, pipelineDescription);
+		if (c.isEmpty()) {
+			this.LOGGER.error("No documents to analyze.");
+			return null;
+		}
 		if (partitionNum == 0) {
 			documents = sparkContext.parallelize(c);
 		} else if (partitionNum < 0) {
