@@ -6,10 +6,8 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.log4j.Logger;
 
 public class ZLib implements CompressionAlgorithm {
-	private static final Logger LOGGER = Logger.getLogger(ZLib.class);
 
 	private static ZLib instance = null;
 	public synchronized static ZLib getInstance() {
@@ -20,44 +18,47 @@ public class ZLib implements CompressionAlgorithm {
 	}
 
 	@Override
-	public ByteArrayOutputStream compress(final ByteArrayOutputStream input) {
+	public byte[] compress(final byte[] input) {
 		Deflater deflater = new Deflater();
-		deflater.setInput(input.toByteArray());
-		ByteArrayOutputStream compressedOutput = new ByteArrayOutputStream();
-		byte[] buffer = new byte[1024];
-		deflater.finish();
-		while (!deflater.finished()) {
-			int processedBytes = deflater.deflate(buffer);
+		deflater.setInput(input);
+		byte[] result;
+		try (ByteArrayOutputStream compressedOutput = new ByteArrayOutputStream()) {
+			byte[] buffer = new byte[1024];
+			deflater.finish();
+			while (!deflater.finished()) {
+				int processedBytes = deflater.deflate(buffer);
 
-			compressedOutput.write(buffer, 0, processedBytes);
-		}
-		try {
-			input.close();
+				compressedOutput.write(buffer, 0, processedBytes);
+			}
+			result = compressedOutput.toByteArray();
 		} catch (IOException e) {
-			LOGGER.warn("Failed to close input stream of uncompressed data.", e);
+			throw new RuntimeException("Error closing byte array output stream while compressing.", e);
 		}
-		return compressedOutput;
+		return result;
 	}
 
 	@Override
-	public ByteArrayOutputStream decompress(final byte[] input) {
+	public byte[] decompress(final byte[] input) {
 		Inflater inflater = new Inflater();
 		inflater.setInput(input);
+		byte[] result;
+		try (ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream()) {
+			byte[] buffer = new byte[1024];
 
-		@SuppressWarnings("resource")
-		ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
-		byte[] buffer = new byte[1024];
-
-		while (!inflater.finished()) {
-			int processedBytes;
-			try {
-				processedBytes = inflater.inflate(buffer);
-			} catch (DataFormatException e) {
-				throw new RuntimeException("Failed to decompress given data.", e);
+			while (!inflater.finished()) {
+				int processedBytes;
+				try {
+					processedBytes = inflater.inflate(buffer);
+				} catch (DataFormatException e) {
+					throw new RuntimeException("Failed to decompress given data.", e);
+				}
+				decompressedOutput.write(buffer, 0, processedBytes);
 			}
-			decompressedOutput.write(buffer, 0, processedBytes);
+			result = decompressedOutput.toByteArray();
+		} catch (IOException e1) {
+			throw new RuntimeException("Error closing byte array output stream while decompressing.", e1);
 		}
-		return decompressedOutput;
+		return result;
 	}
 
 }

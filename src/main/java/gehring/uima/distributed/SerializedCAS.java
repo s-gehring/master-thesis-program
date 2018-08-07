@@ -1,51 +1,29 @@
 package gehring.uima.distributed;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.log4j.Logger;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CAS;
-import org.apache.uima.cas.impl.XmiCasDeserializer;
-import org.apache.uima.cas.impl.XmiCasSerializer;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasCreationUtils;
-import org.xml.sax.SAXException;
 
 import gehring.uima.distributed.compression.CompressionAlgorithm;
 import gehring.uima.distributed.compression.NoCompression;
+import gehring.uima.distributed.serialization.CasSerialization;
+import gehring.uima.distributed.serialization.XmiCasSerialization;
 
 public class SerializedCAS implements Serializable {
 
 	private static final Logger LOGGER = Logger.getLogger(SerializedCAS.class);
-	private transient String preview = null;
 	private byte[] content;
-	private static final int MAX_PREVIEW_LENGTH = 250;
 	private CompressionAlgorithm compression;
-
-	private void generatePreview(final CAS cas) {
-		if (this.preview != null) {
-			return;
-		}
-		if (this.content == null) {
-			this.preview = null;
-		}
-		String docText = cas.getDocumentText();
-		int docLength = docText.length();
-		if (docLength < MAX_PREVIEW_LENGTH) {
-			this.preview = docText;
-		} else {
-			this.preview = docText.substring(0, 247) + "...";
-		}
-	}
+	private CasSerialization serialization;
 
 	public SerializedCAS(final CAS cas) {
-		this(cas, NoCompression.getInstance());
+		this(cas, NoCompression.getInstance(), XmiCasSerialization.getInstance());
 	}
 
 	public int size() {
@@ -55,7 +33,8 @@ public class SerializedCAS implements Serializable {
 		return this.content.length;
 	}
 
-	public SerializedCAS(final CAS cas, final CompressionAlgorithm compressionAlgorithm) {
+	public SerializedCAS(final CAS cas, final CompressionAlgorithm compressionAlgorithm,
+			final CasSerialization serializationAlgorithm) {
 
 		if (cas == null) {
 			this.content = null;
@@ -68,27 +47,17 @@ public class SerializedCAS implements Serializable {
 		} else {
 			this.compression = compressionAlgorithm;
 		}
-
-		this.generatePreview(cas);
-		try (ByteArrayOutputStream casBytes = new ByteArrayOutputStream()) {
-			LOGGER.trace("Serializing CAS...");
-			XmiCasSerializer.serialize(cas, casBytes);
-			LOGGER.debug(
-					"Compressing " + casBytes.size() + " bytes with '" + this.compression.getClass().getName() + "'.");
-			try (ByteArrayOutputStream compressedBytes = this.compression.compress(casBytes)) {
-				LOGGER.debug("Successfully compressed CAS from size " + casBytes.size() + "B to size "
-						+ compressedBytes.size() + "B.");
-				this.content = compressedBytes.toByteArray();
-			}
-
-		} catch (IOException e) {
-			LOGGER.warn("Error closing temporary output stream.", e);
-		} catch (SAXException e) {
-
-			this.preview = cas.getDocumentText().substring(0,
-					cas.getDocumentText().length() > 250 ? 250 : cas.getDocumentText().length());
-			throw new RuntimeException("Error serializing CAS into bytes.", e);
+		if (serializationAlgorithm == null) {
+			LOGGER.warn("Calling CAS serialization with null serialization. Use " + XmiCasSerialization.class.getName()
+					+ " instead.");
+			this.serialization = XmiCasSerialization.getInstance();
+		} else {
+			this.serialization = serializationAlgorithm;
 		}
+
+		byte[] serialized = this.serialization.serialize(cas);
+		this.content = this.compression.compress(serialized);
+
 		LOGGER.trace("Done serializing CAS.");
 	}
 
@@ -96,16 +65,9 @@ public class SerializedCAS implements Serializable {
 		if (this.content == null) {
 			throw new NullPointerException("Can't populate CAS, since the serialized CAS was null.");
 		}
-		byte[] uncompressedContent = this.compression.decompress(this.content).toByteArray();
-		try (InputStream casBytes = new ByteArrayInputStream(uncompressedContent)) {
-			LOGGER.trace("Trying to deserialize CAS...");
-			XmiCasDeserializer.deserialize(casBytes, cas);
-			LOGGER.trace("Done deserializing CAS.");
-		} catch (IOException e) {
-			LOGGER.warn("Error closing temporary input stream.", e);
-		} catch (SAXException e) {
-			throw new RuntimeException("Error deserializing bytes into CAS.", e);
-		}
+
+		byte[] uncompressedContent = this.compression.decompress(this.content);
+		this.serialization.deserialize(uncompressedContent, cas);
 
 	}
 
@@ -127,27 +89,12 @@ public class SerializedCAS implements Serializable {
 		} catch (ResourceInitializationException e1) {
 			throw new RuntimeException("Failed to instantiate a new CAS.", e1);
 		}
-
-		try (InputStream casBytes = new ByteArrayInputStream(this.content)) {
-
-			XmiCasDeserializer.deserialize(casBytes, targetCas);
-
-		} catch (IOException e) {
-			LOGGER.warn("Error closing temporary input stream.", e);
-		} catch (SAXException e) {
-			throw new RuntimeException("Error deserializing bytes into CAS.", e);
-		}
+		this.populateCAS(targetCas);
 		return targetCas;
 	}
 
 	protected byte[] getSerializedContent() {
 		return this.content;
-	}
-
-	@Override
-	public String toString() {
-
-		return "Serialized CAS (excerpt: " + (this.preview == null ? "<null>" : this.preview) + ")";
 	}
 
 	@Override

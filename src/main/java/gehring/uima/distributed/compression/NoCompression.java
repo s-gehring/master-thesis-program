@@ -1,7 +1,5 @@
 package gehring.uima.distributed.compression;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
-
 public class NoCompression implements CompressionAlgorithm {
 	private static NoCompression instance = null;
 
@@ -13,15 +11,13 @@ public class NoCompression implements CompressionAlgorithm {
 	}
 
 	@Override
-	public ByteArrayOutputStream compress(final ByteArrayOutputStream input) {
+	public byte[] compress(final byte[] input) {
 		return input;
 	}
 
 	@Override
-	public ByteArrayOutputStream decompress(final byte[] input) {
-		ByteArrayOutputStream result = new ByteArrayOutputStream(input.length);
-		result.write(input, 0, input.length);
-		return result;
+	public byte[] decompress(final byte[] input) {
+		return input;
 	}
 
 }

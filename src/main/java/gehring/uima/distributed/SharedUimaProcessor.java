@@ -18,12 +18,14 @@ import org.apache.uima.util.CasCreationUtils;
 
 import gehring.uima.distributed.compression.CompressionAlgorithm;
 import gehring.uima.distributed.compression.NoCompression;
+import gehring.uima.distributed.serialization.CasSerialization;
 
 public class SharedUimaProcessor {
 
 	private JavaSparkContext sparkContext = null;
 	private final Logger LOGGER;
 	private CompressionAlgorithm casCompression;
+	private CasSerialization casSerialization;
 
 	public List<SerializedCAS> readDocuments(final CollectionReader reader,
 			final AnalysisEngineDescription pipelineDescription) {
@@ -37,7 +39,7 @@ public class SharedUimaProcessor {
 		try {
 			while (reader.hasNext()) {
 				reader.getNext(cas);
-				result.add(new SerializedCAS(cas, this.casCompression));
+				result.add(new SerializedCAS(cas, this.casCompression, this.casSerialization));
 				cas.reset();
 			}
 		} catch (CollectionException | IOException e) {
