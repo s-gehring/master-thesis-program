@@ -2,6 +2,7 @@ package gehring.uima.distributed;
 
 import gehring.uima.distributed.compression.CompressionAlgorithm;
 import gehring.uima.distributed.compression.NoCompression;
+import gehring.uima.distributed.exceptions.UimaException;
 import gehring.uima.distributed.serialization.CasSerialization;
 import gehring.uima.distributed.serialization.XmiCasSerialization;
 
@@ -80,7 +81,7 @@ public class SerializedCAS implements Serializable {
         try {
             cas = pipeline.newCAS();
         } catch (ResourceInitializationException e) {
-            throw new RuntimeException("Failed to generate CAS on deserialization.", e);
+            throw new UimaException("Failed to generate CAS on deserialization.", e);
         }
         this.populateCAS(cas);
         return cas;
@@ -91,7 +92,7 @@ public class SerializedCAS implements Serializable {
         try {
             targetCas = CasCreationUtils.createCas(pipelineDescription);
         } catch (ResourceInitializationException e1) {
-            throw new RuntimeException("Failed to instantiate a new CAS.", e1);
+            throw new UimaException("Failed to instantiate a new CAS.", e1);
         }
         this.populateCAS(targetCas);
         return targetCas;
@@ -116,6 +117,6 @@ public class SerializedCAS implements Serializable {
 
     @Override
     public int hashCode() {
-        return this.content.hashCode();
+        return Arrays.hashCode(this.content);
     }
 }

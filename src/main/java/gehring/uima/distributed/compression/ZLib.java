@@ -1,5 +1,7 @@
 package gehring.uima.distributed.compression;
 
+import gehring.uima.distributed.exceptions.SharedUimaProcessorException;
+
 import java.io.IOException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -12,8 +14,12 @@ public class ZLib implements CompressionAlgorithm {
     private static final long serialVersionUID = -5166264145257234592L;
     private static ZLib       instance         = null;
 
-    public synchronized static ZLib getInstance() {
-        return instance == null ? instance = new ZLib() : instance;
+    public static synchronized ZLib getInstance() {
+        if (instance == null) {
+            instance = new ZLib();
+        }
+        return instance;
+
     }
 
     private ZLib() {
@@ -34,10 +40,19 @@ public class ZLib implements CompressionAlgorithm {
             }
             result = compressedOutput.toByteArray();
         } catch (IOException e) {
-            throw new RuntimeException("Error closing byte array output stream while compressing.",
+            throw new SharedUimaProcessorException(
+                    "Error closing byte array output stream while compressing.",
                     e);
         }
         return result;
+    }
+
+    private int inflate(final Inflater inflater, final byte[] buffer) {
+        try {
+            return inflater.inflate(buffer);
+        } catch (DataFormatException e) {
+            throw new SharedUimaProcessorException("Failed to decompress given data.", e);
+        }
     }
 
     @Override
@@ -49,17 +64,12 @@ public class ZLib implements CompressionAlgorithm {
             byte[] buffer = new byte[1024];
 
             while (!inflater.finished()) {
-                int processedBytes;
-                try {
-                    processedBytes = inflater.inflate(buffer);
-                } catch (DataFormatException e) {
-                    throw new RuntimeException("Failed to decompress given data.", e);
-                }
+                int processedBytes = inflate(inflater, buffer);
                 decompressedOutput.write(buffer, 0, processedBytes);
             }
             result = decompressedOutput.toByteArray();
         } catch (IOException e1) {
-            throw new RuntimeException(
+            throw new SharedUimaProcessorException(
                     "Error closing byte array output stream while decompressing.", e1);
         }
         return result;

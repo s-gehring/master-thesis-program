@@ -49,13 +49,14 @@ public class AnalysisResult implements Serializable {
             return new LinkedList<>();
         }
         // A rough estimate on the resulting list size.
-        List<CAS> result = new ArrayList<>(serializedResult.length * serializedResult[0].size());
+        List<CAS> deserializedResult = new ArrayList<>(
+                serializedResult.length * serializedResult[0].size());
         for (List<SerializedCAS> curPartition : serializedResult) {
             for (SerializedCAS sCas : curPartition) {
-                result.add(sCas.getCAS(this.pipelineDescription));
+                deserializedResult.add(sCas.getCAS(this.pipelineDescription));
             }
         }
-        return result;
+        return deserializedResult;
     }
 
     public long count() {
@@ -71,10 +72,10 @@ public class AnalysisResult implements Serializable {
                     @Override
                     public Iterator<XmiSerializedCAS> call(final SerializedCAS sCas)
                             throws Exception {
-                        LinkedList<XmiSerializedCAS> result = new LinkedList<>();
-                        result.add(new XmiSerializedCAS(sCas,
+                        LinkedList<XmiSerializedCAS> resultingList = new LinkedList<>();
+                        resultingList.add(new XmiSerializedCAS(sCas,
                                 AnalysisResult.this.pipelineDescription));
-                        return result.iterator();
+                        return resultingList.iterator();
                     }
 
                 });

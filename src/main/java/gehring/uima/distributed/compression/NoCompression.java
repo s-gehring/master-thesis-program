@@ -9,8 +9,12 @@ public class NoCompression implements CompressionAlgorithm {
         // Singleton
     }
 
-    public synchronized static NoCompression getInstance() {
-        return instance == null ? instance = new NoCompression() : instance;
+    public static synchronized NoCompression getInstance() {
+        if (instance == null) {
+            instance = new NoCompression();
+        }
+        return instance;
+
     }
 
     @Override
