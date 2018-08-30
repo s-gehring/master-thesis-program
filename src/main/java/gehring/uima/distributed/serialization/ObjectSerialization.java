@@ -11,47 +11,51 @@ import java.io.Serializable;
 
 public abstract class ObjectSerialization implements CasSerialization {
 
-	protected static byte[] serialize(final Object object) {
-		if (!(object instanceof Serializable)) {
-			throw new RuntimeException("Object (" + object.toString() + ") not serializable.");
-		}
-		byte[] serialized;
-		try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-			ObjectOutput out = null;
+    private static final long serialVersionUID = -7154617795820988751L;
 
-			try {
-				out = new ObjectOutputStream(bos);
-				out.writeObject(object);
-				out.flush();
-			} catch (IOException e) {
-				throw new RuntimeException("Error serialization object.", e);
-			}
+    protected static byte[] serialize(final Object object) {
+        if (!(object instanceof Serializable)) {
+            throw new RuntimeException("Object (" + object.toString() + ") not serializable.");
+        }
+        byte[] serialized;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            ObjectOutput out = null;
 
-			serialized = bos.toByteArray();
-		} catch (IOException e1) {
-			throw new RuntimeException("Error closing byte array output stream while serialization.", e1);
-		}
-		return serialized;
-	}
+            try {
+                out = new ObjectOutputStream(bos);
+                out.writeObject(object);
+                out.flush();
+            } catch (IOException e) {
+                throw new RuntimeException("Error serialization object.", e);
+            }
 
-	protected static Serializable deserialize(final byte[] data) {
-		Object result;
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+            serialized = bos.toByteArray();
+        } catch (IOException e1) {
+            throw new RuntimeException(
+                    "Error closing byte array output stream while serialization.", e1);
+        }
+        return serialized;
+    }
 
-			try {
-				ObjectInput objectReader = new ObjectInputStream(inputStream);
-				result = objectReader.readObject();
-			} catch (IOException | ClassNotFoundException e) {
-				throw new RuntimeException("Error deserializing object from byte data.", e);
-			}
+    protected static Serializable deserialize(final byte[] data) {
+        Object result;
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
 
-		} catch (IOException e1) {
-			throw new RuntimeException("Error closing byte array output stream while deserialization.", e1);
-		}
-		if (!(result instanceof Serializable)) {
-			// Woot? Add confusion to runtime exception.
-			throw new RuntimeException("The... just deserialized object is not... serializable.");
-		}
-		return (Serializable) result;
-	}
+            try {
+                ObjectInput objectReader = new ObjectInputStream(inputStream);
+                result = objectReader.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException("Error deserializing object from byte data.", e);
+            }
+
+        } catch (IOException e1) {
+            throw new RuntimeException(
+                    "Error closing byte array output stream while deserialization.", e1);
+        }
+        if (!(result instanceof Serializable)) {
+            // Woot? Add confusion to runtime exception.
+            throw new RuntimeException("The... just deserialized object is not... serializable.");
+        }
+        return (Serializable) result;
+    }
 }

@@ -12,67 +12,74 @@ import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CAS;
 
 public class AnalysisResult implements Serializable {
-	protected final JavaRDD<SerializedCAS> result;
-	protected final AnalysisEngineDescription pipelineDescription;
 
-	protected AnalysisResult(final JavaRDD<SerializedCAS> result, final AnalysisEngineDescription pipeline) {
-		if (result == null) {
-			throw new NullPointerException("Result RDD is null.");
-		}
-		if (pipeline == null) {
-			throw new NullPointerException("Result cannot be deserialized. Pipeline is null.");
-		}
+    private static final long                 serialVersionUID = -7800008391242232981L;
+    protected final JavaRDD<SerializedCAS>    result;
+    protected final AnalysisEngineDescription pipelineDescription;
 
-		this.result = result;
-		this.pipelineDescription = pipeline;
-	}
+    protected AnalysisResult(final JavaRDD<SerializedCAS> result,
+            final AnalysisEngineDescription pipeline) {
+        if (result == null) {
+            throw new NullPointerException("Result RDD is null.");
+        }
+        if (pipeline == null) {
+            throw new NullPointerException("Result cannot be deserialized. Pipeline is null.");
+        }
 
-	public int getNumPartitions() {
-		return this.result.getNumPartitions();
-	}
+        this.result = result;
+        this.pipelineDescription = pipeline;
+    }
 
-	public List<CAS> collect() {
-		int numPartitions = this.result.getNumPartitions();
-		int[] partitionIds = new int[numPartitions];
-		for (int i = 0; i < numPartitions; ++i) {
-			partitionIds[i] = i;
-		}
-		return this.collectPartitions(partitionIds);
-	}
+    public int getNumPartitions() {
+        return this.result.getNumPartitions();
+    }
 
-	public List<CAS> collectPartitions(final int[] partitionIds) {
-		List<SerializedCAS>[] serializedResult = this.result.collectPartitions(partitionIds);
-		if (serializedResult.length == 0) {
-			return new LinkedList<CAS>();
-		}
-		// A rough estimate on the resulting list size.
-		List<CAS> result = new ArrayList<CAS>(serializedResult.length * serializedResult[0].size());
-		for (List<SerializedCAS> curPartition : serializedResult) {
-			for (SerializedCAS sCas : curPartition) {
-				result.add(sCas.getCAS(this.pipelineDescription));
-			}
-		}
-		return result;
-	}
+    public List<CAS> collect() {
+        int numPartitions = this.result.getNumPartitions();
+        int[] partitionIds = new int[numPartitions];
+        for (int i = 0; i < numPartitions; ++i) {
+            partitionIds[i] = i;
+        }
+        return this.collectPartitions(partitionIds);
+    }
 
-	public long count() {
-		return this.result.count();
-	}
+    public List<CAS> collectPartitions(final int[] partitionIds) {
+        List<SerializedCAS>[] serializedResult = this.result.collectPartitions(partitionIds);
+        if (serializedResult.length == 0) {
+            return new LinkedList<>();
+        }
+        // A rough estimate on the resulting list size.
+        List<CAS> result = new ArrayList<>(serializedResult.length * serializedResult[0].size());
+        for (List<SerializedCAS> curPartition : serializedResult) {
+            for (SerializedCAS sCas : curPartition) {
+                result.add(sCas.getCAS(this.pipelineDescription));
+            }
+        }
+        return result;
+    }
 
-	public void saveAsXmi(final String filepath) {
-		JavaRDD<XmiSerializedCAS> deserialized = this.result
-				.flatMap(new FlatMapFunction<SerializedCAS, XmiSerializedCAS>() {
+    public long count() {
+        return this.result.count();
+    }
 
-					@Override
-					public Iterator<XmiSerializedCAS> call(final SerializedCAS sCas) throws Exception {
-						LinkedList<XmiSerializedCAS> result = new LinkedList<>();
-						result.add(new XmiSerializedCAS(sCas, AnalysisResult.this.pipelineDescription));
-						return result.iterator();
-					}
+    public void saveAsXmi(final String filepath) {
+        JavaRDD<XmiSerializedCAS> deserialized = this.result
+                .flatMap(new FlatMapFunction<SerializedCAS, XmiSerializedCAS>() {
 
-				});
+                    private static final long serialVersionUID = 6948383260570715934L;
 
-		deserialized.saveAsTextFile(filepath);
-	}
+                    @Override
+                    public Iterator<XmiSerializedCAS> call(final SerializedCAS sCas)
+                            throws Exception {
+                        LinkedList<XmiSerializedCAS> result = new LinkedList<>();
+                        result.add(new XmiSerializedCAS(sCas,
+                                AnalysisResult.this.pipelineDescription));
+                        return result.iterator();
+                    }
+
+                });
+
+        deserialized.saveAsTextFile(filepath);
+    }
 
 }

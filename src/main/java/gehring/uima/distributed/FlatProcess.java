@@ -13,35 +13,36 @@ import org.apache.uima.resource.ResourceInitializationException;
 
 public class FlatProcess implements FlatMapFunction<SerializedCAS, SerializedCAS> {
 
-	private AnalysisEngineDescription pipelineDescription;
-	private static AnalysisEngine pipeline;
+    private static final long         serialVersionUID = -7768952669222098016L;
+    private AnalysisEngineDescription pipelineDescription;
+    private static AnalysisEngine     pipeline;
 
-	private AnalysisEngine preparePipeline() {
-		try {
-			return AnalysisEngineFactory.createEngine(this.pipelineDescription);
-		} catch (ResourceInitializationException e) {
-			throw new RuntimeException("Failed to initialize pipeline.", e);
-		}
-	}
+    private AnalysisEngine preparePipeline() {
+        try {
+            return AnalysisEngineFactory.createEngine(this.pipelineDescription);
+        } catch (ResourceInitializationException e) {
+            throw new RuntimeException("Failed to initialize pipeline.", e);
+        }
+    }
 
-	public FlatProcess(final AnalysisEngineDescription engineDescription) {
-		this.pipelineDescription = engineDescription;
+    public FlatProcess(final AnalysisEngineDescription engineDescription) {
+        this.pipelineDescription = engineDescription;
 
-	}
+    }
 
-	@Override
-	public Iterator<SerializedCAS> call(final SerializedCAS inputCAS) throws Exception {
-		if (pipeline == null) {
-			pipeline = this.preparePipeline();
-		}
-		CAS cas = pipeline.newCAS();
-		inputCAS.populateCAS(cas);
+    @Override
+    public Iterator<SerializedCAS> call(final SerializedCAS inputCAS) throws Exception {
+        if (pipeline == null) {
+            pipeline = this.preparePipeline();
+        }
+        CAS cas = pipeline.newCAS();
+        inputCAS.populateCAS(cas);
 
-		pipeline.process(cas);
-		Collection<SerializedCAS> casCollection = new LinkedList<SerializedCAS>();
+        pipeline.process(cas);
+        Collection<SerializedCAS> casCollection = new LinkedList<>();
 
-		casCollection.add(new SerializedCAS(cas));
-		return casCollection.iterator();
-	}
+        casCollection.add(new SerializedCAS(cas));
+        return casCollection.iterator();
+    }
 
 }
