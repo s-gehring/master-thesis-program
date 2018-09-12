@@ -1,7 +1,6 @@
 package gehring.uima.distributed;
 
 import gehring.uima.distributed.compression.CompressionAlgorithm;
-import gehring.uima.distributed.compression.NoCompression;
 import gehring.uima.distributed.exceptions.UimaException;
 import gehring.uima.distributed.serialization.CasSerialization;
 
@@ -49,21 +48,12 @@ public class SharedUimaProcessor {
         return result;
     }
 
-    public SharedUimaProcessor(final JavaSparkContext sparkConfiguration) {
-        this(sparkConfiguration, NoCompression.getInstance(),
-                Logger.getLogger(SharedUimaProcessor.class));
-    }
-
     public SharedUimaProcessor(final JavaSparkContext sparkConfiguration,
-            final CompressionAlgorithm compression) {
-        this(sparkConfiguration, compression, Logger.getLogger(SharedUimaProcessor.class));
-    }
-
-    public SharedUimaProcessor(final JavaSparkContext sparkConfiguration,
-            final CompressionAlgorithm compression,
+            final CompressionAlgorithm compression, final CasSerialization serialization,
             final Logger logger) {
         this.logger = logger;
         this.casCompression = compression;
+        this.casSerialization = serialization;
         this.sparkContext = sparkConfiguration;
     }
 
