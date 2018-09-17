@@ -1,5 +1,7 @@
 package gehring.uima.distributed.serialization;
 
+import gehring.uima.distributed.exceptions.SerializationException;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,8 +17,11 @@ public class XmiCasSerialization implements CasSerialization {
     private static final long          serialVersionUID = 3464307708976926424L;
     private static XmiCasSerialization instance;
 
-    public synchronized static XmiCasSerialization getInstance() {
-        return instance == null ? instance = new XmiCasSerialization() : instance;
+    public static synchronized XmiCasSerialization getInstance() {
+        if (instance == null) {
+            instance = new XmiCasSerialization();
+        }
+        return instance;
     }
 
     private XmiCasSerialization() {
@@ -31,9 +36,9 @@ public class XmiCasSerialization implements CasSerialization {
             return casBytes.toByteArray();
 
         } catch (IOException e) {
-            throw new RuntimeException("Error closing temporary output stream.", e);
+            throw new SerializationException("Error closing temporary output stream.", e);
         } catch (SAXException e) {
-            throw new RuntimeException("Error serializing CAS into bytes.", e);
+            throw new SerializationException("Error serializing CAS into bytes.", e);
         }
 
     }
@@ -44,7 +49,7 @@ public class XmiCasSerialization implements CasSerialization {
             XmiCasDeserializer.deserialize(casBytes, cas);
             return cas;
         } catch (SAXException | IOException e) {
-            throw new RuntimeException("Error deserializing bytes into CAS.", e);
+            throw new SerializationException("Error deserializing bytes into CAS.", e);
         }
 
     }

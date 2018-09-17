@@ -11,8 +11,11 @@ public class UimaSerialization extends ObjectSerialization implements CasSeriali
     private static final long        serialVersionUID = -4067203196992423699L;
     private static UimaSerialization instance;
 
-    public synchronized static UimaSerialization getInstance() {
-        return instance == null ? instance = new UimaSerialization() : instance;
+    public static synchronized UimaSerialization getInstance() {
+        if (instance == null) {
+            instance = new UimaSerialization();
+        }
+        return instance;
     }
 
     private UimaSerialization() {
